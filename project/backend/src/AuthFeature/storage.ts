@@ -6,7 +6,7 @@ const hashPassword = (password: string): string => {
   return bcrypt.hashSync(password, 10);
 };
 
-const users: AuthEntity[] = [
+export const authUsers: AuthEntity[] = [
   {
     id: randomUUID(),
     login: 'testUser1@test.com',
@@ -25,7 +25,7 @@ const users: AuthEntity[] = [
 ];
 
 export const findUserByLogin = (login: string): AuthEntity | undefined => {
-  return users.find((user) => user.login === login);
+  return authUsers.find((user) => user.login === login);
 };
 
 export const verifyPassword = (password: string, hash: string): boolean => {
