@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import authRouter from './AuthFeature/controller';
 
 dotenv.config();
 
@@ -13,6 +14,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+app.use('/api', authRouter);
+
 app.get('/api', (req: Request, res: Response) => {
   res.json({ message: 'Welcome to the API' });
 });
