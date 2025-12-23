@@ -27,6 +27,24 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiDocument, {
   customSiteTitle: 'Support Ticket API Documentation',
 }));
 
+// Delay middleware for /api routes (3 seconds)
+app.use('/api', (req: Request, res: Response, next) => {
+  setTimeout(() => {
+    next();
+  }, 3000);
+});
+
+// Error simulation middleware - returns 500 on every 5th request
+let requestCounter = 0;
+app.use('/api', (req: Request, res: Response, next) => {
+  requestCounter++;
+  if (requestCounter % 5 === 0) {
+    res.status(500).json({ error: 'Planned server error' });
+    return;
+  }
+  next();
+});
+
 // Routes
 app.use('/api', authRouter);
 app.use('/api', userRouter);
