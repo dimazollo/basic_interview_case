@@ -175,3 +175,7 @@ export const tickets: TicketEntity[] = generateTickets();
 export const findTicketsByAssignee = (assigneeId: string): TicketEntity[] => {
   return tickets.filter(ticket => ticket.assignee === assigneeId);
 };
+
+export const findTicketById = (id: string): TicketEntity | undefined => {
+  return tickets.find(ticket => ticket.id === id);
+};
