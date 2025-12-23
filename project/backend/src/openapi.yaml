@@ -1,0 +1,384 @@
+openapi: 3.0.0
+info:
+  title: Support Ticket Management API
+  description: API for managing support tickets with user authentication and ticket history tracking
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:4000/api
+    description: Development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth endpoint
+
+  schemas:
+    AuthRequest:
+      type: object
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          format: email
+          example: testUser1@test.com
+        password:
+          type: string
+          format: password
+          example: password1
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token valid for 1 hour
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    UserEntity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+        login:
+          type: string
+          format: email
+          description: User login email
+        name:
+          type: string
+          description: User full name
+        role:
+          type: string
+          enum: [agent, manager, supervisor]
+          description: User role in the system
+      example:
+        id: 550e8400-e29b-41d4-a716-446655440000
+        login: testUser1@test.com
+        name: Ahmed Al-Rashid
+        role: agent
+
+    TicketStatus:
+      type: string
+      enum: [new, in_progress, resolved, declined]
+      description: Current status of the ticket
+
+    TicketEntity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique ticket identifier
+        title:
+          type: string
+          description: Ticket title
+        description:
+          type: string
+          description: Detailed ticket description
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        assignee:
+          type: string
+          format: uuid
+          description: ID of the user assigned to this ticket
+      example:
+        id: 123e4567-e89b-12d3-a456-426614174000
+        title: Cannot login to my account
+        description: User reports that system timeout. This started happening yesterday. Tried clearing cache but issue persists.
+        status: in_progress
+        assignee: 550e8400-e29b-41d4-a716-446655440000
+
+    TicketHistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique history item identifier
+        title:
+          type: string
+          description: History item title
+        details:
+          type: string
+          description: Detailed description of the history event
+        date:
+          type: string
+          description: Date and time in DD-MM-YYYY hh:mm format
+          example: 15-12-2025 14:30
+      example:
+        id: 789e0123-e89b-12d3-a456-426614174000
+        title: Ticket Created
+        details: Support ticket has been created and assigned to a team member
+        date: 15-12-2025 14:30
+
+    TicketHistory:
+      type: object
+      properties:
+        ticketId:
+          type: string
+          format: uuid
+          description: ID of the related ticket
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketHistoryItem'
+          description: Array of history items in chronological order
+      example:
+        ticketId: 123e4567-e89b-12d3-a456-426614174000
+        history:
+          - id: 789e0123-e89b-12d3-a456-426614174000
+            title: Ticket Created
+            details: Support ticket has been created and assigned to a team member
+            date: 15-12-2025 14:30
+          - id: 789e0124-e89b-12d3-a456-426614174001
+            title: Status Changed to In Progress
+            details: Team member started working on the ticket
+            date: 15-12-2025 18:45
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+      example:
+        error: Invalid credentials
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: OK
+        timestamp:
+          type: string
+          format: date-time
+          example: 2025-12-23T10:30:00.000Z
+
+    WelcomeResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Welcome to the API
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized - Invalid or missing token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Access token required
+
+    ForbiddenError:
+      description: Forbidden - Access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Access denied: ticket assigned to another user
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Ticket not found
+
+paths:
+  /auth:
+    post:
+      tags:
+        - Authentication
+      summary: Login to the system
+      description: Authenticate user and receive JWT token
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad request - Missing credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Login and password are required
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Invalid credentials
+
+  /user:
+    get:
+      tags:
+        - Users
+      summary: Get current user information
+      description: Returns the authenticated user's profile
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEntity'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /tickets:
+    get:
+      tags:
+        - Tickets
+      summary: Get all tickets assigned to current user
+      description: Returns a list of tickets where the current user is the assignee
+      operationId: getTickets
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TicketEntity'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /ticket/{id}:
+    get:
+      tags:
+        - Tickets
+      summary: Get a specific ticket by ID
+      description: Returns ticket details if the current user is the assignee
+      operationId: getTicketById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Ticket ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketEntity'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /ticket/{id}/history:
+    get:
+      tags:
+        - Tickets
+      summary: Get ticket history
+      description: Returns the complete history log for a specific ticket if the current user is the assignee
+      operationId: getTicketHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Ticket ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketHistory'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /:
+    get:
+      tags:
+        - General
+      summary: API welcome message
+      description: Returns a welcome message for the API
+      operationId: getWelcome
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WelcomeResponse'
+
+  /health:
+    get:
+      tags:
+        - General
+      summary: Health check
+      description: Returns the health status of the API
+      operationId: healthCheck
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+tags:
+  - name: Authentication
+    description: Authentication endpoints
+  - name: Users
+    description: User management endpoints
+  - name: Tickets
+    description: Ticket management endpoints
+  - name: General
+    description: General API endpoints
