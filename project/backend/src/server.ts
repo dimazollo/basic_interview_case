@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRouter from './AuthFeature/controller';
 import userRouter from './UserFeature/controller';
+import ticketRouter from './TicketFeature/controller';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api', authRouter);
 app.use('/api', userRouter);
+app.use('/api', ticketRouter);
 
 app.get('/api', (req: Request, res: Response) => {
   res.json({ message: 'Welcome to the API' });
