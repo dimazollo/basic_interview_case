@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { AuthRequest, authenticateToken } from '../UserFeature/middleware';
 import { findUserByLogin } from '../UserFeature/storage';
 import { findTicketsByAssignee, findTicketById } from './storage';
+import { findHistoryByTicketId } from './TicketHistoryFeature/storage';
 
 const router = Router();
 
@@ -54,6 +55,44 @@ router.get('/ticket/:id', authenticateToken, (req: AuthRequest, res: Response) =
   }
 
   res.json(ticket);
+});
+
+router.get('/ticket/:id/history', authenticateToken, (req: AuthRequest, res: Response) => {
+  const login = req.login;
+  const ticketId = req.params.id;
+
+  if (!login) {
+    res.status(401).json({ error: 'Login not found in token' });
+    return;
+  }
+
+  const user = findUserByLogin(login);
+
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  const ticket = findTicketById(ticketId);
+
+  if (!ticket) {
+    res.status(404).json({ error: 'Ticket not found' });
+    return;
+  }
+
+  if (ticket.assignee !== user.id) {
+    res.status(403).json({ error: 'Access denied: ticket assigned to another user' });
+    return;
+  }
+
+  const history = findHistoryByTicketId(ticketId);
+
+  if (!history) {
+    res.status(404).json({ error: 'Ticket history not found' });
+    return;
+  }
+
+  res.json(history);
 });
 
 export default router;
