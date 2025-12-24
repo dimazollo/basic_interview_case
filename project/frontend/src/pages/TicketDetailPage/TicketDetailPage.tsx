@@ -7,6 +7,9 @@ import {
   CircularProgress,
   Chip,
   Divider,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
 import { useApiReq } from '../../utils/useApiReg.ts';
 
@@ -18,6 +21,18 @@ interface TicketEntity {
   description: string;
   status: TicketStatus;
   assignee: string;
+}
+
+interface TicketHistoryItem {
+  id: string;
+  title: string;
+  details: string;
+  date: string;
+}
+
+interface TicketHistory {
+  ticketId: string;
+  history: TicketHistoryItem[];
 }
 
 const statusLabels: Record<TicketStatus, string> = {
@@ -42,9 +57,15 @@ export const TicketDetailPage = () => {
     requestMethod: 'GET',
   });
 
+  const { run: loadHistory, isLoading: isHistoryLoading, data: ticketHistory } = useApiReq<void, TicketHistory>({
+    url: `/api/ticket/${id}/history`,
+    requestMethod: 'GET',
+  });
+
   useEffect(() => {
     if (id) {
       loadTicket();
+      loadHistory();
     }
   }, [id]);
 
@@ -131,6 +152,56 @@ export const TicketDetailPage = () => {
           <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
             {ticket.description}
           </Typography>
+        </Box>
+
+        <Divider sx={{ mb: 2 }} />
+
+        <Box>
+          <Typography variant="h5" component="h2" gutterBottom>
+            История тикета
+          </Typography>
+
+          {isHistoryLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress size={30} />
+            </Box>
+          ) : ticketHistory && ticketHistory.history && ticketHistory.history.length > 0 ? (
+            <List sx={{ bgcolor: 'background.paper' }}>
+              {ticketHistory.history.map((item, index) => (
+                <ListItem
+                  key={item.id}
+                  sx={{
+                    borderBottom: index < ticketHistory.history.length - 1 ? '1px solid' : 'none',
+                    borderColor: 'divider',
+                    alignItems: 'flex-start',
+                    px: 0,
+                  }}
+                >
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <Typography variant="subtitle1" fontWeight="medium">
+                          {item.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 2, flexShrink: 0 }}>
+                          {item.date}
+                        </Typography>
+                      </Box>
+                    }
+                    secondary={
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        {item.details}
+                      </Typography>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+              История отсутствует
+            </Typography>
+          )}
         </Box>
       </Paper>
     </Box>
