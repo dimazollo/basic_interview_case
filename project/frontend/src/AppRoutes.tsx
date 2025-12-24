@@ -3,6 +3,7 @@ import { PageLayout } from './common';
 import { LoginPage } from './pages';
 import { TicketsPage } from './pages/TicketsPage';
 import { TicketDetailPage } from './pages/TicketDetailPage';
+import { HomePage } from './pages/HomePage';
 
 export const AppRoutes = () => {
   return (
@@ -12,6 +13,7 @@ export const AppRoutes = () => {
           <Route path="/login" component={LoginPage} />
           <Route path="/ticket/:id" component={TicketDetailPage} />
           <Route path="/tickets" component={TicketsPage} />
+          <Route exact path="/" component={HomePage} />
         </Switch>
       </PageLayout>
     </Router>
