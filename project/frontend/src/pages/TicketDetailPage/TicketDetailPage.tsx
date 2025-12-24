@@ -10,10 +10,12 @@ import {
   List,
   ListItem,
   ListItemText,
+  Grid,
 } from '@mui/material';
 import { useApiReq } from '../../utils/useApiReg.ts';
 
 type TicketStatus = 'new' | 'in_progress' | 'resolved' | 'declined';
+type UserRole = 'agent' | 'manager' | 'supervisor';
 
 interface TicketEntity {
   id: string;
@@ -35,6 +37,13 @@ interface TicketHistory {
   history: TicketHistoryItem[];
 }
 
+interface UserEntity {
+  id: string;
+  login: string;
+  name: string;
+  role: UserRole;
+}
+
 const statusLabels: Record<TicketStatus, string> = {
   new: 'Новый',
   in_progress: 'В работе',
@@ -47,6 +56,12 @@ const statusColors: Record<TicketStatus, 'default' | 'primary' | 'success' | 'er
   in_progress: 'primary',
   resolved: 'success',
   declined: 'error',
+};
+
+const roleLabels: Record<UserRole, string> = {
+  agent: 'Агент',
+  manager: 'Менеджер',
+  supervisor: 'Супервайзер',
 };
 
 export const TicketDetailPage = () => {
@@ -62,12 +77,23 @@ export const TicketDetailPage = () => {
     requestMethod: 'GET',
   });
 
+  const { run: loadUser, isLoading: isUserLoading, data: assigneeUser } = useApiReq<void, UserEntity>({
+    url: `/api/user/${ticket?.assignee}`,
+    requestMethod: 'GET',
+  });
+
   useEffect(() => {
     if (id) {
       loadTicket();
       loadHistory();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (ticket?.assignee) {
+      loadUser();
+    }
+  }, [ticket?.assignee]);
 
   if (isLoading) {
     return (
@@ -108,13 +134,16 @@ export const TicketDetailPage = () => {
         flexDirection: 'column',
         height: '100%',
         padding: 3,
+        gap: 3,
+        overflowX: 'hidden',
+        overflowY: 'auto',
       }}
     >
       <Paper
         elevation={2}
         sx={{
           padding: 3,
-          maxWidth: 800,
+          maxWidth: 1200,
           width: '100%',
           margin: '0 auto',
         }}
@@ -129,80 +158,106 @@ export const TicketDetailPage = () => {
           />
         </Box>
 
-        <Divider sx={{ mb: 2 }} />
+        <Divider sx={{ mb: 3 }} />
 
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            ID тикета
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {ticket.id}
-          </Typography>
-
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            Исполнитель
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {ticket.assignee}
-          </Typography>
-
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            Описание
-          </Typography>
-          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-            {ticket.description}
-          </Typography>
-        </Box>
-
-        <Divider sx={{ mb: 2 }} />
-
-        <Box>
-          <Typography variant="h5" component="h2" gutterBottom>
-            История тикета
-          </Typography>
-
-          {isHistoryLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-              <CircularProgress size={30} />
-            </Box>
-          ) : ticketHistory && ticketHistory.history && ticketHistory.history.length > 0 ? (
-            <List sx={{ bgcolor: 'background.paper' }}>
-              {ticketHistory.history.map((item, index) => (
-                <ListItem
-                  key={item.id}
-                  sx={{
-                    borderBottom: index < ticketHistory.history.length - 1 ? '1px solid' : 'none',
-                    borderColor: 'divider',
-                    alignItems: 'flex-start',
-                    px: 0,
-                  }}
-                >
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Typography variant="subtitle1" fontWeight="medium">
-                          {item.title}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ ml: 2, flexShrink: 0 }}>
-                          {item.date}
-                        </Typography>
-                      </Box>
-                    }
-                    secondary={
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                        {item.details}
-                      </Typography>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
-          ) : (
-            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-              История отсутствует
+        <Grid container spacing={3}>
+          <Grid item xs={6}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              ID тикета
             </Typography>
-          )}
-        </Box>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              {ticket.id}
+            </Typography>
+
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Исполнитель
+            </Typography>
+            {isUserLoading ? (
+              <CircularProgress size={20} />
+            ) : assigneeUser ? (
+              <Box>
+                <Typography variant="body1" fontWeight="medium">
+                  {assigneeUser.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {roleLabels[assigneeUser.role]}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {assigneeUser.login}
+                </Typography>
+              </Box>
+            ) : (
+              <Typography variant="body1" color="text.secondary">
+                ID: {ticket.assignee}
+              </Typography>
+            )}
+          </Grid>
+
+          <Grid item xs={6}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Описание
+            </Typography>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+              {ticket.description}
+            </Typography>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      <Paper
+        elevation={2}
+        sx={{
+          padding: 3,
+          maxWidth: 1200,
+          width: '100%',
+          margin: '0 auto',
+        }}
+      >
+        <Typography variant="h5" component="h2" gutterBottom>
+          История тикета
+        </Typography>
+
+        {isHistoryLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+            <CircularProgress size={30} />
+          </Box>
+        ) : ticketHistory && ticketHistory.history && ticketHistory.history.length > 0 ? (
+          <List sx={{ bgcolor: 'background.paper' }}>
+            {ticketHistory.history.map((item, index) => (
+              <ListItem
+                key={item.id}
+                sx={{
+                  borderBottom: index < ticketHistory.history.length - 1 ? '1px solid' : 'none',
+                  borderColor: 'divider',
+                  alignItems: 'flex-start',
+                  px: 0,
+                }}
+              >
+                <ListItemText
+                  primary={
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <Typography variant="subtitle1" fontWeight="medium">
+                        {item.title}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ ml: 2, flexShrink: 0 }}>
+                        {item.date}
+                      </Typography>
+                    </Box>
+                  }
+                  secondary={
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {item.details}
+                    </Typography>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+            История отсутствует
+          </Typography>
+        )}
       </Paper>
     </Box>
   );

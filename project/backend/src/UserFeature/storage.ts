@@ -26,3 +26,7 @@ export const users: UserEntity[] = [
 export const findUserByLogin = (login: string): UserEntity | undefined => {
   return users.find((user) => user.login === login);
 };
+
+export const findUserById = (id: string): UserEntity | undefined => {
+  return users.find((user) => user.id === id);
+};

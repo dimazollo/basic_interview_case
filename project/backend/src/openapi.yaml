@@ -258,6 +258,43 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
 
+  /user/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get user information by ID
+      description: Returns user profile by user ID
+      operationId: getUserById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEntity'
+        '400':
+          description: Bad request - Invalid user ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: User ID is required
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   /tickets:
     get:
       tags:
