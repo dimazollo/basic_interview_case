@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Paper } from '@mui/material';
 import {useApiReq} from "../utils/useApiReg.ts";
 
@@ -14,6 +15,7 @@ interface AuthResponse {
 export const LoginPage = () => {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
+  const history = useHistory();
 
   const { run: loginRequest, isLoading } = useApiReq<AuthRequest, AuthResponse>({
     url: '/api/auth',
@@ -26,8 +28,7 @@ export const LoginPage = () => {
       const response = await loginRequest({ login, password });
       if (response?.token) {
         localStorage.setItem('access_token', response.token);
-        console.log('Login successful, token:', response.token);
-        // TODO: Redirect to dashboard or tickets page
+        history.push('/tickets');
       }
     } catch (error) {
       console.error('Login failed:', error);
