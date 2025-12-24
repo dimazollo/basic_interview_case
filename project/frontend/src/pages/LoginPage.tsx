@@ -1,13 +1,37 @@
 import { useState } from 'react';
 import { Box, TextField, Button, Typography, Paper } from '@mui/material';
+import {useApiReq} from "../utils/useApiReg.ts";
+
+interface AuthRequest {
+  login: string;
+  password: string;
+}
+
+interface AuthResponse {
+  token: string;
+}
 
 export const LoginPage = () => {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { run: loginRequest, isLoading } = useApiReq<AuthRequest, AuthResponse>({
+    url: '/api/auth',
+    requestMethod: 'POST',
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login:', login, 'Password:', password);
+    try {
+      const response = await loginRequest({ login, password });
+      if (response?.token) {
+        localStorage.setItem('access_token', response.token);
+        console.log('Login successful, token:', response.token);
+        // TODO: Redirect to dashboard or tickets page
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
   };
 
   return (
@@ -53,9 +77,10 @@ export const LoginPage = () => {
             type="submit"
             fullWidth
             variant="contained"
+            disabled={isLoading}
             sx={{ mt: 3 }}
           >
-            Войти
+            {isLoading ? 'Вход...' : 'Войти'}
           </Button>
         </Box>
       </Paper>

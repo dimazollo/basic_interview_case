@@ -1,5 +1,5 @@
 import {useState} from "react";
-import axios, {AxiosError, AxiosRequestConfig, AxiosResponse} from "axios";
+import axios, {AxiosError, type AxiosRequestConfig, type AxiosResponse} from "axios";
 import {toast} from "react-toastify";
 
 // setup API with
