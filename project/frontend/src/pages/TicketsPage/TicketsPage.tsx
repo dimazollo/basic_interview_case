@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
   Box,
   List,
@@ -36,6 +37,7 @@ const statusColors: Record<TicketStatus, 'default' | 'primary' | 'success' | 'er
 };
 
 export const TicketsPage = () => {
+  const history = useHistory();
   const { run: loadTickets, isLoading, data: tickets } = useApiReq<void, TicketEntity[]>({
     url: '/api/tickets',
     requestMethod: 'GET',
@@ -44,6 +46,10 @@ export const TicketsPage = () => {
   useEffect(() => {
     loadTickets();
   }, []);
+
+  const handleTicketClick = (ticketId: string) => {
+    history.push(`/ticket/${ticketId}`);
+  };
 
   return (
     <Box
@@ -89,9 +95,14 @@ export const TicketsPage = () => {
             {tickets.map((ticket) => (
               <ListItem
                 key={ticket.id}
+                onClick={() => handleTicketClick(ticket.id)}
                 sx={{
                   borderBottom: '1px solid',
                   borderColor: 'divider',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                  },
                   '&:last-child': {
                     borderBottom: 'none',
                   },
