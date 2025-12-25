@@ -1,5 +1,5 @@
 import { Box, AppBar, Toolbar, Typography } from '@mui/material';
-import { ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { useApiReq } from '../utils/useApiReg';
 import { UserMenu } from './UserMenu';
 
