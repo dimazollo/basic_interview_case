@@ -1,6 +1,7 @@
 import { Box, AppBar, Toolbar, Typography } from '@mui/material';
 import { ReactNode, useEffect } from 'react';
 import { useApiReq } from '../utils/useApiReg';
+import { UserMenu } from './UserMenu';
 
 interface PageLayoutProps {
   children: ReactNode;
@@ -43,9 +44,10 @@ export const PageLayout = ({ children }: PageLayoutProps) => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Ticket Management System
           </Typography>
-          <Typography variant="body1">
+          <Typography variant="body1" sx={{ mr: 2 }}>
             User: {user?.login || 'undefined'} {user?.role || 'undefined'}
           </Typography>
+          <UserMenu isLoggedIn={!!user} />
         </Toolbar>
       </AppBar>
 
