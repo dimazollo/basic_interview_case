@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
   Box,
@@ -9,6 +9,11 @@ import {
   Paper,
   CircularProgress,
   Chip,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { useApiReq } from '../../utils/useApiReg.ts';
 
@@ -38,6 +43,9 @@ const statusColors: Record<TicketStatus, 'default' | 'primary' | 'success' | 'er
 
 export const TicketsPage = () => {
   const history = useHistory();
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all'>('all');
+
   const { run: loadTickets, isLoading, data: tickets } = useApiReq<void, TicketEntity[]>({
     url: '/api/tickets',
     requestMethod: 'GET',
@@ -46,6 +54,16 @@ export const TicketsPage = () => {
   useEffect(() => {
     loadTickets();
   }, []);
+
+  const filteredTickets = useMemo(() => {
+    if (!tickets) return [];
+
+    return tickets.filter((ticket) => {
+      const matchesSearch = ticket.title.toLowerCase().includes(searchText.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [tickets, searchText, statusFilter]);
 
   const handleTicketClick = (ticketId: string) => {
     history.push(`/ticket/${ticketId}`);
@@ -63,6 +81,31 @@ export const TicketsPage = () => {
       <Typography variant="h4" component="h1" gutterBottom>
         Мои тикеты
       </Typography>
+
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <TextField
+          label="Поиск по названию"
+          variant="outlined"
+          size="small"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          sx={{ flex: 1 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>Статус</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Статус"
+            onChange={(e) => setStatusFilter(e.target.value as TicketStatus | 'all')}
+          >
+            <MenuItem value="all">Все</MenuItem>
+            <MenuItem value="new">Новый</MenuItem>
+            <MenuItem value="in_progress">В работе</MenuItem>
+            <MenuItem value="resolved">Решен</MenuItem>
+            <MenuItem value="declined">Отклонен</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
 
       <Paper
         elevation={2}
@@ -84,7 +127,7 @@ export const TicketsPage = () => {
           >
             <CircularProgress />
           </Box>
-        ) : tickets && tickets.length > 0 ? (
+        ) : filteredTickets.length > 0 ? (
           <List
             sx={{
               flex: 1,
@@ -92,7 +135,7 @@ export const TicketsPage = () => {
               padding: 0,
             }}
           >
-            {tickets.map((ticket) => (
+            {filteredTickets.map((ticket) => (
               <ListItem
                 key={ticket.id}
                 onClick={() => handleTicketClick(ticket.id)}
