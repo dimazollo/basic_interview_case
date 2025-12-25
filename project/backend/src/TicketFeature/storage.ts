@@ -179,3 +179,11 @@ export const findTicketsByAssignee = (assigneeId: string): TicketEntity[] => {
 export const findTicketById = (id: string): TicketEntity | undefined => {
   return tickets.find(ticket => ticket.id === id);
 };
+
+export const updateTicketStatus = (id: string, newStatus: TicketStatus): TicketEntity | undefined => {
+  const ticket = tickets.find(ticket => ticket.id === id);
+  if (ticket) {
+    ticket.status = newStatus;
+  }
+  return ticket;
+};

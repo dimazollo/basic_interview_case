@@ -380,6 +380,74 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
 
+  /ticket/{id}/status:
+    post:
+      tags:
+        - Tickets
+      summary: Update ticket status
+      description: |
+        Updates the status of a ticket with validation rules:
+        - Tickets in 'new' status can be changed to any other status
+        - Tickets in 'in_progress' status can only be changed to 'resolved' or 'declined'
+        - Tickets in 'resolved' or 'declined' status cannot be changed
+        - User can only update tickets where they are the assignee
+      operationId: updateTicketStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Ticket ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  $ref: '#/components/schemas/TicketStatus'
+            example:
+              status: in_progress
+      responses:
+        '200':
+          description: Ticket status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketEntity'
+        '400':
+          description: Bad request - Invalid status or transition not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingStatus:
+                  value:
+                    error: Status is required
+                invalidStatus:
+                  value:
+                    error: Invalid status value
+                resolvedTicket:
+                  value:
+                    error: Cannot change status of resolved or declined tickets
+                invalidTransition:
+                  value:
+                    error: Ticket in progress can only be changed to resolved or declined
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   /:
     get:
       tags:

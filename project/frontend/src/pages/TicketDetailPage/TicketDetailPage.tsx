@@ -11,6 +11,7 @@ import {
   ListItem,
   ListItemText,
   Grid,
+  Button,
 } from '@mui/material';
 import { useApiReq } from '../../utils/useApiReg.ts';
 
@@ -95,6 +96,16 @@ export const TicketDetailPage = () => {
     }
   }, [ticket?.assignee]);
 
+  const getAvailableStatuses = (currentStatus: TicketStatus): TicketStatus[] => {
+    if (currentStatus === 'new') {
+      return ['in_progress', 'resolved', 'declined'];
+    }
+    if (currentStatus === 'in_progress') {
+      return ['resolved', 'declined'];
+    }
+    return []; // resolved or declined - no transitions available
+  };
+
   if (isLoading) {
     return (
       <Box
@@ -139,6 +150,32 @@ export const TicketDetailPage = () => {
         overflowY: 'auto',
       }}
     >
+        {getAvailableStatuses(ticket.status).length > 0 && (
+            <Paper
+                elevation={2}
+                sx={{
+                    padding: 3,
+                    maxWidth: 1200,
+                    width: '100%',
+                    margin: '0 auto',
+                }}
+            >
+                <Typography variant="h6" component="h3" gutterBottom>
+                    Изменить статус
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    {getAvailableStatuses(ticket.status).map((status) => (
+                        <Button
+                            key={status}
+                            variant="contained"
+                            color={statusColors[status]}
+                        >
+                            {statusLabels[status]}
+                        </Button>
+                    ))}
+                </Box>
+            </Paper>
+        )}
       <Paper
         elevation={2}
         sx={{
